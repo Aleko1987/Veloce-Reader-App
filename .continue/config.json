@@ -1,0 +1,11 @@
+{
+    "models": [
+      {
+        "title": "Veloce Linux AI",
+        "provider": "openai",
+        "model": "phi-3",
+        "apiBase": "http://192.168.8.43:8080/v1",
+        "apiKey": "sk-dummy"
+      }
+    ]
+  }

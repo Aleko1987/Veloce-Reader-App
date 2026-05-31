@@ -1,0 +1,10 @@
+{
+  "name": "Veloce Reader",
+  "short_name": "Veloce",
+  "description": "RSVP speed reader",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#fbbf24",
+  "icons": []
+}
