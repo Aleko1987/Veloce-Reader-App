@@ -33,7 +33,7 @@ export function SpeedReader() {
       <div className="relative rounded-2xl border border-zinc-800 bg-zinc-950 p-12 min-h-[260px] flex items-center justify-center">
         <div className="absolute inset-x-12 top-1/2 -translate-y-12 h-px bg-zinc-800" />
         <div className="absolute inset-x-12 top-1/2 translate-y-12 h-px bg-zinc-800" />
-        <div className="font-mono text-5xl md:text-6xl tracking-tight tabular-nums">
+        <div className="font-mono text-7xl md:text-[5.625rem] tracking-tight tabular-nums">
           <span className="text-zinc-500">{before}</span>
           <span className="text-amber-400">{focus}</span>
           <span className="text-zinc-100">{after}</span>

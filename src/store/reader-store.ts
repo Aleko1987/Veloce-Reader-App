@@ -1,11 +1,14 @@
 import { create } from "zustand";
 import { z } from "zod";
+import { ProcessingInfoSchema, type ProcessingInfo } from "@/types/processing";
 
 export const ViewSchema = z.enum(["home", "dashboard", "reader"]);
 export type View = z.infer<typeof ViewSchema>;
 
 export const ReaderStateSchema = z.object({
   text: z.string(),
+  rawTranscript: z.string(),
+  processingInfo: ProcessingInfoSchema.nullable(),
   wpm: z.number().min(100).max(1200),
   isPlaying: z.boolean(),
   index: z.number().min(0),
@@ -28,11 +31,18 @@ interface ReaderActions {
   setIndex: (i: number) => void;
   setView: (v: View) => void;
   setUrl: (u: string) => void;
-  loadTranscript: (text: string) => void;
+  loadTranscript: (payload: {
+    raw: string;
+    processed: string;
+    processing: ProcessingInfo | null;
+  }) => void;
+  clearTranscripts: () => void;
 }
 
 const initial: ReaderState = {
   text: DEFAULT_TEXT,
+  rawTranscript: DEFAULT_TEXT,
+  processingInfo: null,
   wpm: 500,
   isPlaying: false,
   index: 0,
@@ -62,8 +72,17 @@ export const useReaderStore = create<ReaderState & ReaderActions>((set, get) => 
   setIndex: (i) => set({ index: Math.max(0, i) }),
   setView: (view) => set({ view }),
   setUrl: (url) => set({ url }),
-  loadTranscript: (text) =>
-    set({ text, index: 0, isPlaying: false, view: "dashboard" }),
+  loadTranscript: ({ raw, processed, processing }) =>
+    set({
+      rawTranscript: raw,
+      text: processed,
+      processingInfo: processing,
+      index: 0,
+      isPlaying: false,
+      view: "dashboard",
+    }),
+  clearTranscripts: () =>
+    set({ text: DEFAULT_TEXT, rawTranscript: DEFAULT_TEXT, processingInfo: null }),
 }));
 
 export const selectWords = (s: Pick<ReaderState, "text">) =>

@@ -1,16 +1,21 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { processTranscript } from "@/lib/process-transcript.functions";
 import { fetchYoutubeTranscript } from "@/lib/transcript.functions";
 import { useReaderStore } from "@/store/reader-store";
+import type { ProcessingInfo } from "@/types/processing";
 
 export function HomeScreen() {
-  const { url, setUrl, loadTranscript, setText, setView } = useReaderStore();
+  const { url, setUrl, loadTranscript, setView } = useReaderStore();
   const fetchFn = useServerFn(fetchYoutubeTranscript);
+  const processFn = useServerFn(processTranscript);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     setError(null);
+    setNotice(null);
     if (!url.trim()) {
       setError("Enter a YouTube URL");
       return;
@@ -21,7 +26,13 @@ export function HomeScreen() {
       if (res.error || !res.text) {
         setError(res.error ?? "No transcript available");
       } else {
-        loadTranscript(res.text);
+        const processed = await processFn({ data: { rawText: res.text } });
+        if (processed.error) setNotice(processed.error);
+        loadTranscript({
+          raw: processed.rawText,
+          processed: processed.processedText,
+          processing: processed.processing as ProcessingInfo,
+        });
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to analyze");
@@ -33,8 +44,13 @@ export function HomeScreen() {
   const handlePaste = () => {
     const sample =
       "Welcome to Veloce Reader. Paste a YouTube URL above to analyze its transcript, or use this sample text to jump straight into rapid serial visual presentation reading at five hundred words per minute.";
-    setText(sample);
-    setView("dashboard");
+    const passthrough: ProcessingInfo = {
+      provider: "local",
+      model: "none",
+      method: "passthrough",
+      label: "Sample text (no LLM)",
+    };
+    loadTranscript({ raw: sample, processed: sample, processing: passthrough });
   };
 
   return (
@@ -66,6 +82,11 @@ export function HomeScreen() {
             {error}
           </div>
         )}
+        {notice && !error && (
+          <div className="text-xs text-amber-300/90 font-mono border border-amber-900/40 bg-amber-950/20 rounded-lg p-3">
+            {notice}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <button
@@ -76,7 +97,7 @@ export function HomeScreen() {
             {loading ? (
               <>
                 <span className="h-4 w-4 rounded-full border-2 border-black/30 border-t-black animate-spin" />
-                Analyzing transcript…
+                Fetching & processing…
               </>
             ) : (
               "Analyze"

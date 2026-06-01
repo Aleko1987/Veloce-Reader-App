@@ -1,5 +1,7 @@
 import { useMemo } from "react";
+import { TranscriptComparison } from "@/components/TranscriptComparison";
 import { useReaderStore, selectWords } from "@/store/reader-store";
+import { formatProcessingLabel } from "@/types/processing";
 
 function computeInsights(words: string[]) {
   const freq = new Map<string, number>();
@@ -24,13 +26,13 @@ function computeInsights(words: string[]) {
 }
 
 export function AnalysisDashboard() {
-  const { text, setView, wpm } = useReaderStore();
+  const { text, rawTranscript, processingInfo, setView, wpm } = useReaderStore();
   const words = useMemo(() => selectWords({ text }), [text]);
   const insights = useMemo(() => computeInsights(words), [words]);
   const minutes = Math.max(1, Math.round((words.length / wpm) * 10) / 10);
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-8">
+    <div className="w-full max-w-5xl flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-widest text-amber-400 font-mono">
@@ -47,21 +49,35 @@ export function AnalysisDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard label="Word Count" value={words.length.toLocaleString()} />
+        <StatCard label="Processed words" value={words.length.toLocaleString()} />
         <StatCard label="Reading Time" value={`${minutes} min`} hint={`@ ${wpm} WPM`} />
-        <StatCard label="Characters" value={text.length.toLocaleString()} />
+        <StatCard
+          label="LLM / processor"
+          value={processingInfo?.method ?? "none"}
+          hint={
+            processingInfo
+              ? formatProcessingLabel(processingInfo)
+              : "Not classified"
+          }
+        />
       </div>
+
+      <TranscriptComparison
+        raw={rawTranscript}
+        processed={text}
+        processing={processingInfo}
+      />
 
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
             <h3 className="text-sm font-mono uppercase tracking-widest">
-              AI Insights
+              Keyword insights
             </h3>
           </div>
           <span className="text-[10px] text-zinc-600 font-mono uppercase">
-            Preview · local model pending
+            Processed text only
           </span>
         </div>
 
@@ -97,22 +113,15 @@ export function AnalysisDashboard() {
                 insights.takeaways.map((w, i) => (
                   <li key={w} className="flex gap-3 text-sm text-zinc-300">
                     <span className="text-amber-400 font-mono">0{i + 1}</span>
-                    <span>Frequent mention of <span className="text-zinc-100">{w}</span></span>
+                    <span>
+                      Frequent mention of <span className="text-zinc-100">{w}</span>
+                    </span>
                   </li>
                 ))
               )}
             </ul>
           </div>
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 space-y-3">
-        <h4 className="text-xs uppercase tracking-widest text-zinc-500">
-          Transcript Preview
-        </h4>
-        <p className="text-sm text-zinc-400 font-mono leading-relaxed line-clamp-4">
-          {text.slice(0, 400)}{text.length > 400 ? "…" : ""}
-        </p>
       </div>
 
       <button
@@ -132,7 +141,7 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
         {label}
       </p>
       <p className="text-3xl font-bold mt-2 tabular-nums">{value}</p>
-      {hint && <p className="text-xs text-zinc-600 mt-1 font-mono">{hint}</p>}
+      {hint && <p className="text-xs text-zinc-600 mt-1 font-mono line-clamp-2">{hint}</p>}
     </div>
   );
 }
