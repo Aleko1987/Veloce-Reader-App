@@ -39,22 +39,9 @@ export const fetchYoutubeTranscript = createServerFn({ method: "POST" })
       };
     }
 
-    const { YoutubeTranscript } = await import("youtube-transcript");
     try {
-      const segments = await YoutubeTranscript.fetchTranscript(videoId);
-      const text = segments
-        .map((s) => s.text)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .replace(/&amp;#39;/g, "'")
-        .replace(/&amp;quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&quot;/g, '"')
-        .replace(/&amp;/g, "&")
-        .trim();
-      if (!text) {
-        return { text: "", error: "Transcript is empty for this video." };
-      }
+      const { fetchYoutubeCaptionText } = await import("./youtube-captions");
+      const text = await fetchYoutubeCaptionText(videoId);
       return { text, error: null as string | null };
     } catch (err) {
       console.error("Transcript fetch failed:", err);
