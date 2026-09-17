@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { veloceHeadMeta } from "@/lib/site-meta";
 import { SpeedReader } from "@/components/SpeedReader";
 import { HomeScreen } from "@/components/HomeScreen";
 import { AnalysisDashboard } from "@/components/AnalysisDashboard";
@@ -7,10 +8,7 @@ import { useReaderStore } from "@/store/reader-store";
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
-    meta: [
-      { title: "Veloce Reader — RSVP Speed Reading" },
-      { name: "description", content: "Analyze YouTube transcripts and read them at 500+ WPM with rapid serial visual presentation." },
-    ],
+    meta: veloceHeadMeta(),
     links: [{ rel: "manifest", href: "/manifest.json" }],
   }),
 });
