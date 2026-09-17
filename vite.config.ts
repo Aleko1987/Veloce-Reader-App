@@ -1,22 +1,35 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - tanstackStart, viteReact, tailwindcss, tsConfigPaths, cloudflare (build-only),
-//     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
-//     error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... } }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import path from "node:path";
+import { defineConfig } from "vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import tsConfigPaths from "vite-tsconfig-paths";
+import { cloudflare } from "@cloudflare/vite-plugin";
 import { nitro } from "nitro/vite";
 
-// Vercel sets VERCEL=1. Cloudflare's Vite plugin emits a Worker, which Vercel
-// cannot serve — that produces the platform 404 at veloce-reader-app.vercel.app.
 const isVercel = process.env.VERCEL === "1";
 
-// Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-// @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
-export default defineConfig({
-  cloudflare: isVercel ? false : undefined,
-  tanstackStart: {
-    server: { entry: "server" },
+export default defineConfig(({ command }) => ({
+  server: {
+    host: true,
+    port: 8080,
   },
-  plugins: isVercel ? [nitro()] : [],
-});
+  resolve: {
+    alias: {
+      "@": path.resolve(process.cwd(), "src"),
+    },
+    dedupe: ["react", "react-dom", "@tanstack/react-query"],
+  },
+  plugins: [
+    ...(command === "build" && !isVercel
+      ? [cloudflare({ viteEnvironment: { name: "ssr" } })]
+      : []),
+    tanstackStart({
+      server: { entry: "server" },
+    }),
+    ...(isVercel ? [nitro()] : []),
+    viteReact(),
+    tailwindcss(),
+    tsConfigPaths({ projects: ["./tsconfig.json"] }),
+  ],
+}));
